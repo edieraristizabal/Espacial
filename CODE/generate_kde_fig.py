@@ -1,0 +1,66 @@
+import os
+import numpy as np
+import rasterio
+from rasterio.plot import show
+from rasterio.enums import Resampling
+import geopandas as gpd
+import matplotlib.pyplot as plt
+
+def main():
+    root_dir = "/home/edier/Documents/INVESTIGACION/PAPERS/ELABORACION/Espacial"
+    data_dir = os.path.join(root_dir, "DATA")
+    fig_dir = os.path.join(root_dir, "FIG")
+    
+    os.makedirs(fig_dir, exist_ok=True)
+    
+    basin_path = os.path.join(data_dir, "Cuenca_Iguana.shp")
+    kde_path = os.path.join(data_dir, "kde_3x3_iguana_1m.tif")
+    out_fig = os.path.join(fig_dir, "kde_density_map.png")
+    
+    print("Loading basin boundary...")
+    basin = gpd.read_file(basin_path)
+    
+    print("Preparing figure...")
+    fig, ax = plt.subplots(figsize=(10, 10), dpi=300)
+    basin.plot(ax=ax, facecolor='lightgray', edgecolor='black', linewidth=1, alpha=0.5)
+    
+    print("Loading KDE raster (fast downsampling for visibility)...")
+    scale_factor = 0.05  # downsample to ~5% size (approx 1300x1100 px) for performance
+    
+    with rasterio.open(kde_path) as src:
+        # Use average resampling to capture density hotspots across the block
+        data = src.read(
+            1,
+            out_shape=(
+                int(src.height * scale_factor),
+                int(src.width * scale_factor)
+            ),
+            resampling=Resampling.average
+        )
+        
+        # scale the transform as well
+        transform = src.transform * src.transform.scale(
+            (src.width / data.shape[1]),
+            (src.height / data.shape[0])
+        )
+        
+        # Mask zeros (or values very close to zero from float precision)
+        data[data < 1e-5] = np.nan
+        
+        print("Plotting KDE overlay...")
+        # vmin/vmax scaled from the downsampled data metrics
+        show(data, transform=transform, ax=ax, cmap='Reds', vmin=0, vmax=np.nanpercentile(data, 99))
+        
+    ax.set_title("Movimientos en Masa: KDE 3x3 Neighborhood Density")
+    ax.set_xlabel("Easting (m)")
+    ax.set_ylabel("Northing (m)")
+    ax.grid(True, linestyle='--', alpha=0.5)
+    
+    print(f"Saving figure to {out_fig}...")
+    plt.tight_layout()
+    plt.savefig(out_fig, bbox_inches='tight', dpi=300)
+    plt.close()
+    print("Figure successfully generated.")
+
+if __name__ == "__main__":
+    main()

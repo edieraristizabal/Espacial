@@ -1,0 +1,26 @@
+# Rasters grandes
+*.tif
+*.tiff
+*.img
+*.nc
+
+# Datos temporales
+tmp_*
+*.tmp
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# Entornos virtuales
+.env
+venv/
+env/
+
+# IDEs
+.vscode/
+.idea/
