@@ -112,9 +112,9 @@ result_path <- file.path(ruta_a_resultado, result_file)
 saveRDS(fit, result_path)
 
 # Save the posteriors
-post1 <- coda_df(fit$mcmc_post[1])
-post2 <- coda_df(fit$mcmc_post[2])
-post3 <- coda_df(fit$mcmc_post[3])
+post1 <- coda_df(coda::as.mcmc(fit)[1])
+post2 <- coda_df(coda::as.mcmc(fit)[2])
+post3 <- coda_df(coda::as.mcmc(fit)[3])
 post_all <- rbind(post1, post2, post3)
 
 # Calculate threshold in cells (90th quantile) and area
@@ -144,7 +144,7 @@ write.csv(post_all, file = paste0(ruta_a_posteriores, post_file), row.names = FA
 
 # Save the plot
 plot_file <- gsub(".csv", "_fit_plot.png", basename(csv_file))
-plot <- plot(fit, geom_data = 'point', cp_dens = TRUE, q_fit = TRUE, q_predict = c(0.1, 0.9)) + 
+plot <- plot(fit, geom_data = 'point', cp_dens = TRUE, interval = c("fitted", "predict"), width = 0.8) + 
   theme_bw(15) +
   labs(x = expression("Catchment Area (km"^{2}*")"), y = "Slope", size = 16) +
   geom_vline(xintercept = quantile_90, color = "orange", size = 1.1) +
